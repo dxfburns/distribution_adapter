@@ -26,14 +26,14 @@ class dispatcher {
 private:
 	int machine_id;
 	client sip_client;
-	void on_open(client*, websocketpp::connection_hdl);
-	void on_message(client*, websocketpp::connection_hdl, message_ptr);
+	void on_open(websocketpp::connection_hdl);
+	void on_message(websocketpp::connection_hdl, message_ptr);
 	void set_dispatch_package_from_message(const string&, dispatch_package&);
 	void set_message_from_dispatch_package(dispatch_package&, string&);
 	void set_waiters_map(vector<string>&, map<int, string>&);
 public:
-	dispatcher();
-	void start(int, string);
+	dispatcher() {}
+	void run(int, string);
 };
 
 

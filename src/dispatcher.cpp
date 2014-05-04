@@ -26,11 +26,7 @@ map<int, string> m_servers;
 map<int, client*> m_clients;
 map<int, websocketpp::connection_hdl> m_conn;
 
-dispatcher::dispatcher() {
-
-}
-
-void dispatcher::start(int machine_id, string host) {
+void dispatcher::run(int machine_id, string host) {
 	this->machine_id = machine_id;
 
 	boost::format fmt("ws://%1%:6690");
@@ -46,8 +42,8 @@ void dispatcher::start(int machine_id, string host) {
 		sip_client.init_asio();
 
 		// Register our handlers
-		sip_client.set_open_handler(bind(&dispatcher::on_open, this, &sip_client, ::_1));
-		sip_client.set_message_handler(bind(&dispatcher::on_message, this, &sip_client, ::_1, ::_2));
+		sip_client.set_open_handler(bind(&dispatcher::on_open, this, ::_1));
+		sip_client.set_message_handler(bind(&dispatcher::on_message, this, ::_1, ::_2));
 
 		websocketpp::lib::error_code ec;
 		client::connection_ptr con = sip_client.get_connection(uri, ec);
@@ -75,20 +71,20 @@ void dispatcher::start(int machine_id, string host) {
 	}
 }
 
-void dispatcher::on_open(client* c, websocketpp::connection_hdl hdl) {
+void dispatcher::on_open(websocketpp::connection_hdl hdl) {
 	cout << "connection ready in dispatcher" << endl;
 	m_conn[this->machine_id] = hdl;
-	m_clients[this->machine_id] = c;
+	m_clients[this->machine_id] = &sip_client;
 
 	websocketpp::frame::opcode::value ev = websocketpp::frame::opcode::text;
 	const string msg =
 			"{\"to\":\"dispatcher@1\",\"msg\":{\"from\":\"dispatcher@1\",\"to\":\"\",\"site_id\":\"\",\"session_id\":\"\",\"message_type\":\"5\",\"messages\":[]}}";
 	cout << "send on open message : " << endl;
 	cout << msg << endl;
-	c->send(hdl, msg, ev);
+	sip_client.send(hdl, msg, ev);
 }
 
-void dispatcher::on_message(client* c, websocketpp::connection_hdl hdl, message_ptr msg) {
+void dispatcher::on_message(websocketpp::connection_hdl hdl, message_ptr msg) {
 	client::connection_ptr con = sip_client.get_con_from_hdl(hdl);
 	cout << "Received a message:" << endl;
 	cout << "    " << msg->get_payload() << endl;
